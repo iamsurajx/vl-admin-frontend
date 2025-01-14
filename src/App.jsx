@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -8,6 +7,8 @@ import Layout from "./components/Layout"; // Includes Header and Sidebar
 import InvestorsTable from "./pages/InvestorsTable";
 import EditInvestorPage from "./pages/UpdateInvestorForm"; // Import the EditInvestorPage
 import InvestorProfile from "./pages/InvestorProfile";
+import UsersTable from "./pages/users/UsersTable";
+import UserDetails from "./pages/users/UserDetails"; // Import the new UserDetails component
 
 function App() {
   return (
@@ -54,7 +55,7 @@ function App() {
           }
         />
         <Route
-          path="/edit-investor/:id" // Dynamic route for editing an investor
+          path="/edit-investor/:id"
           element={
             <PrivateRoute
               element={
@@ -66,12 +67,36 @@ function App() {
           }
         />
         <Route
-          path="/investor/:id" // Dynamic route for editing an investor
+          path="/investor/:id"
           element={
             <PrivateRoute
               element={
                 <Layout>
-                 <InvestorProfile/>
+                  <InvestorProfile />
+                </Layout>
+              }
+            />
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <PrivateRoute
+              element={
+                <Layout>
+                  <UsersTable />
+                </Layout>
+              }
+            />
+          }
+        />
+        <Route
+          path="/user/:id" // Dynamic route for user details
+          element={
+            <PrivateRoute
+              element={
+                <Layout>
+                  <UserDetails />
                 </Layout>
               }
             />

@@ -9,6 +9,7 @@ const InvestorsTable = () => {
   const [confirmModal, setConfirmModal] = useState(false);
   const [currentInvestor, setCurrentInvestor] = useState(null);
   const [profileName, setProfileName] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // Added search query state
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,18 +61,35 @@ const InvestorsTable = () => {
     navigate(`/edit-investor/${investor._id}`);
   };
 
-
   const handleViewProfile = (investor) => {
     navigate(`/investor/${investor._id}`);
   };
 
+  const filteredInvestors = investors.filter(
+    (investor) =>
+      investor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      investor.geography.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      investor.investmentStages.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      investor.investorType.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
-    return <PageLoder />
+    return <PageLoder />;
   }
 
   return (
     <div className="relative overflow-x-auto shadow-md sm:rounded-lg bg-gray-100 p-6">
+      {/* Search Input */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search investors..."
+          className="w-full p-2 border rounded"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)} // Update search query state
+        />
+      </div>
+
       <table className="w-full text-sm text-left text-gray-800 bg-gray-200">
         <thead className="text-xs uppercase bg-gray-300 text-gray-600">
           <tr>
@@ -85,8 +103,8 @@ const InvestorsTable = () => {
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(investors) && investors.length > 0 ? (
-            investors.map((investor) => (
+          {Array.isArray(filteredInvestors) && filteredInvestors.length > 0 ? (
+            filteredInvestors.map((investor) => (
               <tr key={investor._id} className="odd:bg-white even:bg-gray-100 border-b">
                 <td className="px-6 py-4">
                   <img

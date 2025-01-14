@@ -18,10 +18,10 @@ const Sidebar = () => {
           <span>Dashboard</span>
         </Link>
 
-        <a href="#" className="flex items-center space-x-3 hover:bg-gray-700 p-2 rounded">
+        <Link to="/users" className="flex items-center space-x-3 hover:bg-gray-700 p-2 rounded">
           <FaUsers />
           <span>Users</span>
-        </a>
+        </Link>
 
         <a href="#" className="flex items-center space-x-3 hover:bg-gray-700 p-2 rounded">
           <FaChartLine />
