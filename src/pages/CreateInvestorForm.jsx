@@ -165,42 +165,6 @@ const CreateInvestorForm = () => {
     }
   };
 
-  //   e.preventDefault();
-  //   setLoading(true);
-  //   setError("");
-  //   setSuccess("");
-
-  //   try {
-  //     await axios.post(
-  //       "https://venturloop-backend-v-20.onrender.com/api/create-investor",
-  //       formData,
-  //       { headers: { "Content-Type": "application/json" } }
-  //     );
-  //     setSuccess("Investor created successfully!");
-  //     setFormData({
-  //       name: "",
-  //       website: "",
-  //       image: "",
-  //       portfolioCompanies: [{ name: "", logo: "", link: "" }],
-  //       description: "",
-  //       geography: "",
-  //       investmentStages: [],
-  //       businessModel: [],
-  //       investorType: "",
-  //       sectorInterested: [],
-  //       checkSize: "",
-  //       headquarter: "",
-  //       contactLink: "",
-  //     });
-  //   } catch (err) {
-  //     setError(
-  //       err.response?.data?.message || "Something went wrong. Please try again."
-  //     );
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
