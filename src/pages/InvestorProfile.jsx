@@ -16,6 +16,7 @@ const InvestorProfile = () => {
         const response = await axios.get(
           `https://backendv3-wmen.onrender.com/api/get-investor/${id}`
         );
+        console.log(response.data);
         setInvestor(response.data);
         setError("");
       } catch (err) {
@@ -65,19 +66,82 @@ const InvestorProfile = () => {
 
         {/* Investor Details */}
         <div className="md:w-2/3 md:pl-8">
-          <h1 className="text-2xl font-bold text-indigo-800 mb-2">{investor.name}</h1>
+          <h1 className="text-2xl font-bold text-indigo-800 mb-2">
+            {investor.name}
+          </h1>
           <p className="text-gray-600 mb-6">{investor.investor.description}</p>
 
-          <h2 className="text-xl font-semibold text-indigo-800 mb-4">Geography</h2>
+          <h2 className="text-xl font-semibold text-indigo-800 mb-4">
+            Geography
+          </h2>
           <p className="text-gray-700 mb-6">{investor.investor.geography}</p>
 
-          <h2 className="text-xl font-semibold text-indigo-800 mb-4">Investment Stages</h2>
-          <p className="text-gray-700 mb-6">{investor.investor.investmentStages}</p>
+          <h2 className="text-xl font-semibold text-indigo-800 mb-4">
+            Headquarters
+          </h2>
+          <p className="text-gray-700 mb-6">{investor.investor.headquarter}</p>
 
-          <h2 className="text-xl font-semibold text-indigo-800 mb-4">Investor Type</h2>
+          <h2 className="text-xl font-semibold text-indigo-800 mb-4">
+            Investment Stages
+          </h2>
+          <p className="text-gray-700 mb-6">
+            {investor.investor.investmentStages || "Not specified"}
+          </p>
+
+          <h2 className="text-xl font-semibold text-indigo-800 mb-4">
+            Investor Type
+          </h2>
           <p className="text-gray-700 mb-6">{investor.investor.investorType}</p>
 
-          <h2 className="text-xl font-semibold text-indigo-800 mb-4">Contact Information</h2>
+          <h2 className="text-xl font-semibold text-indigo-800 mb-4">
+            Check Size
+          </h2>
+          <p className="text-gray-700 mb-6">
+            {investor.investor.checkSize || "Not specified"}
+          </p>
+
+          <h2 className="text-xl font-semibold text-indigo-800 mb-4">
+            Sector Interested
+          </h2>
+          <ul className="list-disc pl-5 text-gray-700 mb-6">
+            {investor.investor.sectorInterested &&
+              investor.investor.sectorInterested.map((sector, index) => (
+                <li key={index}>{sector}</li>
+              ))}
+          </ul>
+
+          {/* Portfolio Companies */}
+          {investor.investor.portfolioCompanies &&
+            investor.investor.portfolioCompanies.length > 0 && (
+              <>
+                <h2 className="text-xl font-semibold text-indigo-800 mb-2">
+                  Portfolio Companies
+                </h2>
+                <ul className="space-y-4">
+                  {investor.investor.portfolioCompanies.map((company) => (
+                    <li key={company._id} className="flex items-center">
+                      <img
+                        src={company.logo}
+                        alt={`${company.name} Logo`}
+                        className="w-10 h-auto mr-3"
+                      />
+                      <a
+                        href={company.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {company.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+          <h2 className="text-xl font-semibold text-indigo-800 mb-4 mt-5">
+            Contact Information
+          </h2>
           <ul className="space-y-2 text-gray-700">
             <li className="flex items-center">
               <svg
@@ -87,7 +151,25 @@ const InvestorProfile = () => {
                 fill="currentColor"
               >
                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                <path d="M18 8.118l-8 4l8 4V14a2 2 0 01 -2 -2H8a2 2 0 01 -2 -2V8.118z" />
+              </svg>
+              <a
+                href={investor.investor.contactLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {investor.investor.contactLink}
+              </a>
+            </li>
+            <li className="flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2 text-indigo-800"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 2c5.52 0 10 4.48 10 10s -4.48 10 -10 10S2 17.52 2 12S6.48 2 12 2zm0 -1C6.48 .01 .01 .01 .01 .01s-.01 .01 -.01 .01S-.01 .01 .01 .01S-.01 .01 .01 .01S-.01 .01 .01 .01S-.01 .02 .02 .02s-.02 .02 -.02 .02s-.02 -.02 -.02 -.02s-.02 -.02 -.02 -.02S-.02 -.03 -.03 -.03s-.03 -.03 -.03 -.03s-.03 -.03 -.03 -.03s-.03 -.03 -.03 -.03s-.03 -.03 -.03 -.03s-.03 -.03 -.03 -.03S-.05 -1 -1 -1S-.05 -1 -1 -1S-.05 -1 -1 -1z" />
               </svg>
               <a
                 href={investor.investor.website}
