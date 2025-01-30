@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import PageLoader from "../../components/PageLoder";
+import ConfirmationModal from "./ConfirmationModal"; // Import the modal
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+  const [userToDelete, setUserToDelete] = useState(null); // Store user ID for deletion
 
   const navigate = useNavigate();
 
@@ -18,7 +21,6 @@ const UsersTable = () => {
         const data = Array.isArray(response.data.data) ? response.data.data : [];
         setUsers(data);
         setFilteredUsers(data); // Initialize filtered users
-        console.log(data);
       } catch (error) {
         console.error("Error fetching users:", error);
         setUsers([]);
@@ -40,6 +42,34 @@ const UsersTable = () => {
     );
     setFilteredUsers(filtered);
   }, [search, users]);
+
+  const handleDeleteUser = async (userId) => {
+    try {
+      await axios.delete(`https://backendv3-wmen.onrender.com/api/users/${userId}`);
+      // Update the local state to remove the deleted user
+      setUsers(users.filter(user => user._id !== userId));
+      setFilteredUsers(filteredUsers.filter(user => user._id !== userId));
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    }
+  };
+
+  const openModal = (userId) => {
+    setUserToDelete(userId);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setUserToDelete(null);
+  };
+
+  const confirmDelete = () => {
+    if (userToDelete) {
+      handleDeleteUser(userToDelete);
+      closeModal();
+    }
+  };
 
   if (loading) {
     return <PageLoader />;
@@ -102,9 +132,12 @@ const UsersTable = () => {
                   {user.status === "online" ? "Online" : "Offline"}
                 </td>
                 <td className="px-6 py-4">
-                  <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
-                    Edit
-                  </a>
+                  <button 
+                    onClick={() => openModal(user._id)} 
+                    className="font-medium text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))
@@ -117,6 +150,13 @@ const UsersTable = () => {
           )}
         </tbody>
       </table>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal 
+        isOpen={isModalOpen} 
+        onClose={closeModal} 
+        onConfirm={confirmDelete} 
+      />
     </div>
   );
 };
