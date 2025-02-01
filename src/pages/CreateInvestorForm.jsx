@@ -642,7 +642,7 @@ const InvestorForm = () => {
             name="description"
             value={formData.description}
             onChange={handleInputChange}
-            className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+            className="w-full p-3 h-60 border border-gray-600 rounded bg-gray-800 text-white"
             required
           />
         </div>
