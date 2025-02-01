@@ -24,20 +24,26 @@ const InvestorForm = () => {
     sectorInterested: [],
     checkSize: "",
     headquarter: "",
-    contactLink: "",  // Ensure this is included
+    contactLink: "",
     portfolioCompanies: [],
   });
-
-
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+  // ===================================
+
+  const [uploadedProfileImagePreview, setUploadedProfileImagePreview] =
+    useState(""); // For uploaded file preview
+  const [urlProfileImagePreview, setUrlProfileImagePreview] = useState(""); // For URL preview
+
+  // =================================
+
+  const [uploadedPortfolioPreviews, setUploadedPortfolioPreviews] = useState(
+    []
+  ); // For uploaded portfolio logos
+  const [urlPortfolioPreviews, setUrlPortfolioPreviews] = useState([]); // For URL portfolio logos
 
   const handleCheckboxChange = (e) => {
     const { name, value } = e.target;
@@ -58,13 +64,13 @@ const InvestorForm = () => {
     }));
   };
 
-  const handlePortfolioLogoSourceChange = (index, e) => {
-    const { value } = e.target;
-    const updatedPortfolio = [...formData.portfolioCompanies];
-    updatedPortfolio[index].logoSource = value;
-    updatedPortfolio[index].logo = ""; // Reset the logo field when switching sources
-    setFormData({ ...formData, portfolioCompanies: updatedPortfolio });
-  };
+  // const handlePortfolioLogoSourceChange = (index, e) => {
+  //   const { value } = e.target;
+  //   const updatedPortfolio = [...formData.portfolioCompanies];
+  //   updatedPortfolio[index].logoSource = value;
+  //   updatedPortfolio[index].logo = ""; // Reset the logo field when switching sources
+  //   setFormData({ ...formData, portfolioCompanies: updatedPortfolio });
+  // };
 
   const removeCompany = (index) => {
     const updatedCompanies = formData.portfolioCompanies.filter(
@@ -73,13 +79,12 @@ const InvestorForm = () => {
     setFormData({ ...formData, portfolioCompanies: updatedCompanies });
   };
 
-
-  const handlePortfolioChange = (index, e) => {
-    const { name, value } = e.target;
-    const updatedPortfolio = [...formData.portfolioCompanies];
-    updatedPortfolio[index][name] = value;
-    setFormData({ ...formData, portfolioCompanies: updatedPortfolio });
-  };
+  // const handlePortfolioChange = (index, e) => {
+  //   const { name, value } = e.target;
+  //   const updatedPortfolio = [...formData.portfolioCompanies];
+  //   updatedPortfolio[index][name] = value;
+  //   setFormData({ ...formData, portfolioCompanies: updatedPortfolio });
+  // };
 
   const addPortfolioCompany = () => {
     setFormData((prev) => ({
@@ -91,12 +96,19 @@ const InvestorForm = () => {
     }));
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Form Data:", formData); // Log the formData to check if it's as expected
+    // Validate required fields
+    if (!formData.name || !formData.website || !formData.description) {
+      setError("Please fill out all required fields.");
+      return;
+    }
+
     try {
-      setLoading(true);
+      console.log("Form Data:", formData); // Log form data
+
       const response = await axios.post(
         "https://venturloop-backend-v-20.onrender.com/api/create-investor",
         formData
@@ -104,7 +116,7 @@ const InvestorForm = () => {
 
       if (response.status === 200) {
         setSuccess("Investor added successfully!");
-        setMessage("");
+        setError(""); // Clear any previous error
         setFormData({
           name: "",
           website: "",
@@ -123,25 +135,39 @@ const InvestorForm = () => {
         });
       } else {
         setError("Error occurred while submitting the form.");
+        setSuccess(""); // Clear any previous success message
       }
     } catch (error) {
-      console.error("API Error:", error.response ? error.response.data : error); // Log full error details
-      setError("An error occurred while submitting the form.");
-    } finally {
-      setLoading(false);
+      if (error.response) {
+        console.error("API Error:", error.response.data);
+        setError("Server error: " + error.response.data.message);
+      } else if (error.request) {
+        console.error("Network Error:", error.request);
+        setError("Network error: Please check your internet connection.");
+      } else {
+        console.error("Error:", error.message);
+        setError("An unexpected error occurred.");
+      }
+      setSuccess(""); // Clear any previous success message
     }
-
   };
+  // =================================
 
   const handleImageUpload = async (e, field, index = null) => {
     const file = e.target.files[0];
-    console.log("File being uploaded:", file); // Log the file being uploaded
-
     if (!file) return;
+
+    // Set preview for uploaded file
+    if (field === "image") {
+      setUploadedProfileImagePreview(URL.createObjectURL(file));
+    } else if (field === "portfolioLogo" && index !== null) {
+      const updatedPreviews = [...uploadedPortfolioPreviews];
+      updatedPreviews[index] = URL.createObjectURL(file);
+      setUploadedPortfolioPreviews(updatedPreviews);
+    }
 
     const imageFormData = new FormData();
     imageFormData.append("file", file);
-    // Your image upload logic continues...
 
     try {
       setLoading(true);
@@ -174,6 +200,18 @@ const InvestorForm = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    // Set preview for Profile Image URL
+    if (name === "image" && formData.imageSource === "url") {
+      setUrlProfileImagePreview(value);
+    }
+  };
+
+  // ==============================
+
   const handleRemoveSelection = (type, value) => {
     if (type === "businessModel") {
       setFormData((prev) => ({
@@ -190,9 +228,40 @@ const InvestorForm = () => {
     }
   };
 
+  const handlePortfolioChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedPortfolio = [...formData.portfolioCompanies];
+    updatedPortfolio[index][name] = value;
+    setFormData({ ...formData, portfolioCompanies: updatedPortfolio });
+
+    // Set preview for Portfolio Logo URL
+    if (name === "logo" && updatedPortfolio[index].logoSource === "url") {
+      const updatedPreviews = [...urlPortfolioPreviews];
+      updatedPreviews[index] = value;
+      setUrlPortfolioPreviews(updatedPreviews);
+    }
+  };
+
+  const handlePortfolioLogoSourceChange = (index, e) => {
+    const { value } = e.target;
+    const updatedPortfolio = [...formData.portfolioCompanies];
+    updatedPortfolio[index].logoSource = value;
+    updatedPortfolio[index].logo = "";
+    setFormData({ ...formData, portfolioCompanies: updatedPortfolio });
+
+    // Reset previews when switching sources
+    const updatedUploadedPreviews = [...uploadedPortfolioPreviews];
+    updatedUploadedPreviews[index] = "";
+    setUploadedPortfolioPreviews(updatedUploadedPreviews);
+
+    const updatedUrlPreviews = [...urlPortfolioPreviews];
+    updatedUrlPreviews[index] = "";
+    setUrlPortfolioPreviews(updatedUrlPreviews);
+  };
+
   return (
     <div className="container mx-auto p-4 bg-gray-900 text-white rounded-lg shadow-xl">
-      <h1 className="text-2xl font-bold mb-4">Add Investor</h1>
+      <h1 className="text-2xl font-bold mb-4">Create Investor</h1>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium">Name</label>
@@ -230,6 +299,15 @@ const InvestorForm = () => {
                 onChange={handleInputChange}
                 className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
               />
+              {urlProfileImagePreview && (
+                <div className="mt-4">
+                  <img
+                    src={urlProfileImagePreview}
+                    alt="URL Preview"
+                    className="w-32 h-32 object-cover rounded"
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div>
@@ -239,6 +317,15 @@ const InvestorForm = () => {
                 onChange={(e) => handleImageUpload(e, "image")}
                 className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
               />
+              {uploadedProfileImagePreview && (
+                <div className="mt-4">
+                  <img
+                    src={uploadedProfileImagePreview}
+                    alt="Uploaded Preview"
+                    className="w-32 h-32 object-cover rounded"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -253,6 +340,116 @@ const InvestorForm = () => {
             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
             required
           />
+        </div>
+
+        {/* Portfolio Companies */}
+        <div>
+          <h2 className="text-lg font-semibold">Portfolio Companies</h2>
+          {formData.portfolioCompanies.map((company, index) => (
+            <div key={index} className="space-y-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium">
+                  Company Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={company.name}
+                  onChange={(e) => handlePortfolioChange(index, e)}
+                  className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+                  required
+                />
+              </div>
+
+              {/* Company Logo Source */}
+              <div>
+                <label className="block text-sm font-medium">Logo Source</label>
+                <select
+                  name="logoSource"
+                  value={company.logoSource}
+                  onChange={(e) => handlePortfolioLogoSourceChange(index, e)}
+                  className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+                >
+                  <option value="url">URL</option>
+                  <option value="upload">Upload</option>
+                </select>
+                {company.logoSource === "url" ? (
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Logo URL
+                    </label>
+                    <input
+                      type="url"
+                      name="logo"
+                      value={company.logo}
+                      onChange={(e) => handlePortfolioChange(index, e)}
+                      className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+                    />
+                    {urlPortfolioPreviews[index] && (
+                      <div className="mt-4">
+                        <img
+                          src={urlPortfolioPreviews[index]}
+                          alt="URL Preview"
+                          className="w-32 h-32 object-cover rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Upload Logo
+                    </label>
+                    <input
+                      type="file"
+                      onChange={(e) =>
+                        handleImageUpload(e, "portfolioLogo", index)
+                      }
+                      className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+                    />
+                    {uploadedPortfolioPreviews[index] && (
+                      <div className="mt-4">
+                        <img
+                          src={uploadedPortfolioPreviews[index]}
+                          alt="Uploaded Preview"
+                          className="w-32 h-32 object-cover rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium">
+                  Company Link
+                </label>
+                <input
+                  type="url"
+                  name="link"
+                  value={company.link}
+                  onChange={(e) => handlePortfolioChange(index, e)}
+                  className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+                  required
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => removeCompany(index)}
+                className="bg-red-600 text-white px-4 py-2 rounded mt-2"
+              >
+                Remove Company
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addPortfolioCompany}
+            className="bg-green-600 text-white px-4 py-2 rounded mt-4"
+          >
+            Add Company
+          </button>
         </div>
 
         {/* Geography */}
@@ -322,10 +519,11 @@ const InvestorForm = () => {
                     target: { name: "sectorInterested", value: sector },
                   })
                 }
-                className={`p-2 mb-2 ${formData.sectorInterested.includes(sector)
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-700 text-gray-300"
-                  } rounded`}
+                className={`p-2 mb-2 ${
+                  formData.sectorInterested.includes(sector)
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-700 text-gray-300"
+                } rounded`}
               >
                 {sector}
               </button>
@@ -365,10 +563,11 @@ const InvestorForm = () => {
                     target: { name: "businessModel", value: model },
                   })
                 }
-                className={`p-2 mb-2 ${formData.businessModel.includes(model)
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-700 text-gray-300"
-                  } rounded`}
+                className={`p-2 mb-2 ${
+                  formData.businessModel.includes(model)
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-700 text-gray-300"
+                } rounded`}
               >
                 {model}
               </button>
@@ -397,9 +596,11 @@ const InvestorForm = () => {
 
         {/* Check Size */}
         <div>
-          <label className="block text-sm font-medium">Check Size In Millions</label>
+          <label className="block text-sm font-medium">
+            Check Size In Millions
+          </label>
           <input
-            type="text"  // Make it a text input to allow string values
+            type="text" // Make it a text input to allow string values
             name="checkSize"
             value={formData.checkSize}
             onChange={handleInputChange}
@@ -421,7 +622,6 @@ const InvestorForm = () => {
           />
         </div>
 
-
         {/* Contact Link */}
         <div>
           <label className="block text-sm font-medium">Contact Link</label>
@@ -435,7 +635,6 @@ const InvestorForm = () => {
           />
         </div>
 
-
         {/* Description */}
         <div>
           <label className="block text-sm font-medium">Description</label>
@@ -447,90 +646,6 @@ const InvestorForm = () => {
             required
           />
         </div>
-
-
-        {/* Portfolio Companies */}
-        <div>
-          <h2 className="text-lg font-semibold">Portfolio Companies</h2>
-          {formData.portfolioCompanies.map((company, index) => (
-            <div key={index} className="space-y-4 mt-4">
-              <div>
-                <label className="block text-sm font-medium">Company Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={company.name}
-                  onChange={(e) => handlePortfolioChange(index, e)}
-                  className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
-                  required
-                />
-              </div>
-
-              {/* Company Logo Source */}
-              <div>
-                <label className="block text-sm font-medium">Logo Source</label>
-                <select
-                  name="logoSource"
-                  value={company.logoSource}
-                  onChange={(e) => handlePortfolioLogoSourceChange(index, e)}
-                  className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
-                >
-                  <option value="url">URL</option>
-                  <option value="upload">Upload</option>
-                </select>
-                {company.logoSource === "url" ? (
-                  <div>
-                    <label className="block text-sm font-medium">Logo URL</label>
-                    <input
-                      type="url"
-                      name="logo"
-                      value={company.logo}
-                      onChange={(e) => handlePortfolioChange(index, e)}
-                      className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-sm font-medium">Upload Logo</label>
-                    <input
-                      type="file"
-                      onChange={(e) => handleImageUpload(e, "portfolioLogo", index)}
-                      className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium">Company Link</label>
-                <input
-                  type="url"
-                  name="link"
-                  value={company.link}
-                  onChange={(e) => handlePortfolioChange(index, e)}
-                  className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
-                  required
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => removeCompany(index)}
-                className="bg-red-600 text-white px-4 py-2 rounded mt-2"
-              >
-                Remove Company
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addPortfolioCompany}
-            className="bg-green-600 text-white px-4 py-2 rounded mt-4"
-          >
-            Add Another Company
-          </button>
-        </div>
-
 
         {/* Submit */}
         <button
@@ -546,6 +661,556 @@ const InvestorForm = () => {
 };
 
 export default InvestorForm;
+
+
+// import React, { useState } from "react";
+// import axios from "axios";
+
+// // Import constants
+// import {
+//   businessModels,
+//   sectors,
+//   investorTypes,
+//   geographies,
+//   investmentStages,
+// } from "./constants";
+
+// const InvestorForm = () => {
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     website: "",
+//     image: "",
+//     imageSource: "url",
+//     description: "",
+//     geography: "",
+//     investmentStages: "",
+//     businessModel: [],
+//     investorType: "",
+//     sectorInterested: [],
+//     checkSize: "",
+//     headquarter: "",
+//     contactLink: "",  // Ensure this is included
+//     portfolioCompanies: [],
+//   });
+
+
+//   const [message, setMessage] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState("");
+//   const [success, setSuccess] = useState("");
+
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData({ ...formData, [name]: value });
+//   };
+
+//   const handleCheckboxChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData((prevState) => {
+//       const newValue = prevState[name].includes(value)
+//         ? prevState[name].filter((item) => item !== value)
+//         : [...prevState[name], value];
+//       return { ...prevState, [name]: newValue };
+//     });
+//   };
+
+//   const handleImageSourceChange = (e) => {
+//     const { value } = e.target;
+//     setFormData((prev) => ({
+//       ...prev,
+//       imageSource: value,
+//       image: "", // Reset the image field when switching sources
+//     }));
+//   };
+
+//   const handlePortfolioLogoSourceChange = (index, e) => {
+//     const { value } = e.target;
+//     const updatedPortfolio = [...formData.portfolioCompanies];
+//     updatedPortfolio[index].logoSource = value;
+//     updatedPortfolio[index].logo = ""; // Reset the logo field when switching sources
+//     setFormData({ ...formData, portfolioCompanies: updatedPortfolio });
+//   };
+
+//   const removeCompany = (index) => {
+//     const updatedCompanies = formData.portfolioCompanies.filter(
+//       (_, i) => i !== index
+//     );
+//     setFormData({ ...formData, portfolioCompanies: updatedCompanies });
+//   };
+
+
+//   const handlePortfolioChange = (index, e) => {
+//     const { name, value } = e.target;
+//     const updatedPortfolio = [...formData.portfolioCompanies];
+//     updatedPortfolio[index][name] = value;
+//     setFormData({ ...formData, portfolioCompanies: updatedPortfolio });
+//   };
+
+//   const addPortfolioCompany = () => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       portfolioCompanies: [
+//         ...prev.portfolioCompanies,
+//         { name: "", logo: "", logoSource: "upload", link: "" },
+//       ],
+//     }));
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+
+//     console.log("Form Data:", formData); // Log the formData to check if it's as expected
+//     try {
+//       setLoading(true);
+//       const response = await axios.post(
+//         "https://venturloop-backend-v-20.onrender.com/api/create-investor",
+//         formData
+//       );
+
+//       if (response.status === 200) {
+//         setSuccess("Investor added successfully!");
+//         setMessage("");
+//         setFormData({
+//           name: "",
+//           website: "",
+//           image: "",
+//           imageSource: "url",
+//           description: "",
+//           geography: "",
+//           investmentStages: "",
+//           businessModel: [],
+//           investorType: "",
+//           sectorInterested: [],
+//           checkSize: "",
+//           headquarter: "",
+//           contactLink: "",
+//           portfolioCompanies: [],
+//         });
+//       } else {
+//         setError("Error occurred while submitting the form.");
+//       }
+//     } catch (error) {
+//       console.error("API Error:", error.response ? error.response.data : error); // Log full error details
+//       setError("An error occurred while submitting the form.");
+//     } finally {
+//       setLoading(false);
+//     }
+
+//   };
+
+//   const handleImageUpload = async (e, field, index = null) => {
+//     const file = e.target.files[0];
+//     console.log("File being uploaded:", file); // Log the file being uploaded
+
+//     if (!file) return;
+
+//     const imageFormData = new FormData();
+//     imageFormData.append("file", file);
+//     // Your image upload logic continues...
+
+//     try {
+//       setLoading(true);
+//       const response = await axios.post(
+//         "https://backendv3-wmen.onrender.com/api/fileUpload",
+//         imageFormData
+//       );
+
+//       if (response.data.status && response.data.data) {
+//         const url = response.data.data[0].url;
+//         if (field === "image") {
+//           setFormData((prev) => ({ ...prev, image: url }));
+//         } else if (field === "portfolioLogo" && index !== null) {
+//           const updatedPortfolio = [...formData.portfolioCompanies];
+//           updatedPortfolio[index].logo = url;
+//           setFormData((prev) => ({
+//             ...prev,
+//             portfolioCompanies: updatedPortfolio,
+//           }));
+//         }
+//         setSuccess("Image uploaded successfully!");
+//         setError("");
+//       } else {
+//         setError("Image upload failed. Please try again.");
+//       }
+//     } catch (err) {
+//       setError("An error occurred while uploading the image.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleRemoveSelection = (type, value) => {
+//     if (type === "businessModel") {
+//       setFormData((prev) => ({
+//         ...prev,
+//         businessModel: prev.businessModel.filter((item) => item !== value),
+//       }));
+//     } else if (type === "sectorInterested") {
+//       setFormData((prev) => ({
+//         ...prev,
+//         sectorInterested: prev.sectorInterested.filter(
+//           (item) => item !== value
+//         ),
+//       }));
+//     }
+//   };
+
+//   return (
+//     <div className="container mx-auto p-4 bg-gray-900 text-white rounded-lg shadow-xl">
+//       <h1 className="text-2xl font-bold mb-4">Add Investor</h1>
+//       <form onSubmit={handleSubmit} className="space-y-6">
+//         <div>
+//           <label className="block text-sm font-medium">Name</label>
+//           <input
+//             type="text"
+//             name="name"
+//             value={formData.name}
+//             onChange={handleInputChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//             required
+//           />
+//         </div>
+
+//         {/* Image Source: Profile Image */}
+//         <div>
+//           <label className="block text-sm font-medium">
+//             Profile Image Source
+//           </label>
+//           <select
+//             name="imageSource"
+//             value={formData.imageSource}
+//             onChange={handleImageSourceChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//           >
+//             <option value="url">URL</option>
+//             <option value="upload">Upload</option>
+//           </select>
+//           {formData.imageSource === "url" ? (
+//             <div>
+//               <label className="block text-sm font-medium">Image URL</label>
+//               <input
+//                 type="url"
+//                 name="image"
+//                 value={formData.image}
+//                 onChange={handleInputChange}
+//                 className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//               />
+//             </div>
+//           ) : (
+//             <div>
+//               <label className="block text-sm font-medium">Upload Image</label>
+//               <input
+//                 type="file"
+//                 onChange={(e) => handleImageUpload(e, "image")}
+//                 className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//               />
+//             </div>
+//           )}
+//         </div>
+
+//         <div>
+//           <label className="block text-sm font-medium">Website</label>
+//           <input
+//             type="url"
+//             name="website"
+//             value={formData.website}
+//             onChange={handleInputChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//             required
+//           />
+//         </div>
+
+//         {/* Geography */}
+//         <div>
+//           <label className="block text-sm font-medium">Geography</label>
+//           <select
+//             name="geography"
+//             value={formData.geography}
+//             onChange={handleInputChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//           >
+//             <option value="">Select Geography</option>
+//             {geographies.map((geo) => (
+//               <option key={geo} value={geo}>
+//                 {geo}
+//               </option>
+//             ))}
+//           </select>
+//         </div>
+
+//         {/* Investment Stages */}
+//         <div>
+//           <label className="block text-sm font-medium">Investment Stages</label>
+//           <select
+//             name="investmentStages"
+//             value={formData.investmentStages}
+//             onChange={handleInputChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//           >
+//             <option value="">Select Investment Stage</option>
+//             {investmentStages.map((stage) => (
+//               <option key={stage} value={stage}>
+//                 {stage}
+//               </option>
+//             ))}
+//           </select>
+//         </div>
+
+//         {/* Investor Type Dropdown */}
+//         <div>
+//           <label className="block text-sm font-medium">Investor Type</label>
+//           <select
+//             name="investorType"
+//             value={formData.investorType}
+//             onChange={handleInputChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//           >
+//             <option value="">Select Investor Type</option>
+//             {investorTypes.map((type) => (
+//               <option key={type} value={type}>
+//                 {type}
+//               </option>
+//             ))}
+//           </select>
+//         </div>
+
+//         {/* Sector Interested */}
+//         <div>
+//           <label className="block text-sm font-medium">Sector Interested</label>
+//           <div className="space-x-4 mb-4">
+//             {sectors.map((sector) => (
+//               <button
+//                 type="button"
+//                 key={sector}
+//                 onClick={() =>
+//                   handleCheckboxChange({
+//                     target: { name: "sectorInterested", value: sector },
+//                   })
+//                 }
+//                 className={`p-2 mb-2 ${formData.sectorInterested.includes(sector)
+//                   ? "bg-green-600 text-white"
+//                   : "bg-gray-700 text-gray-300"
+//                   } rounded`}
+//               >
+//                 {sector}
+//               </button>
+//             ))}
+//           </div>
+//           <div className="flex flex-wrap space-x-2">
+//             {formData.sectorInterested.map((selectedItem) => (
+//               <div
+//                 key={selectedItem}
+//                 className="bg-green-600 text-white px-4 py-1 rounded flex items-center space-x-2"
+//               >
+//                 <span>{selectedItem}</span>
+//                 <button
+//                   type="button"
+//                   onClick={() =>
+//                     handleRemoveSelection("sectorInterested", selectedItem)
+//                   }
+//                   className="text-xs font-semibold text-red-500"
+//                 >
+//                   X
+//                 </button>
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* Business Model */}
+//         <div>
+//           <label className="block text-sm font-medium">Business Model</label>
+//           <div className="space-x-4 mb-4">
+//             {businessModels.map((model) => (
+//               <button
+//                 type="button"
+//                 key={model}
+//                 onClick={() =>
+//                   handleCheckboxChange({
+//                     target: { name: "businessModel", value: model },
+//                   })
+//                 }
+//                 className={`p-2 mb-2 ${formData.businessModel.includes(model)
+//                   ? "bg-green-600 text-white"
+//                   : "bg-gray-700 text-gray-300"
+//                   } rounded`}
+//               >
+//                 {model}
+//               </button>
+//             ))}
+//           </div>
+//           <div className="flex flex-wrap space-x-2">
+//             {formData.businessModel.map((selectedItem) => (
+//               <div
+//                 key={selectedItem}
+//                 className="bg-green-600 text-white px-4 py-1 rounded flex items-center space-x-2"
+//               >
+//                 <span>{selectedItem}</span>
+//                 <button
+//                   type="button"
+//                   onClick={() =>
+//                     handleRemoveSelection("businessModel", selectedItem)
+//                   }
+//                   className="text-xs font-semibold text-red-500"
+//                 >
+//                   X
+//                 </button>
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* Check Size */}
+//         <div>
+//           <label className="block text-sm font-medium">Check Size In Millions</label>
+//           <input
+//             type="text"  // Make it a text input to allow string values
+//             name="checkSize"
+//             value={formData.checkSize}
+//             onChange={handleInputChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//             required
+//           />
+//         </div>
+
+//         {/* Headquarter */}
+//         <div>
+//           <label className="block text-sm font-medium">Headquarter</label>
+//           <input
+//             type="text"
+//             name="headquarter"
+//             value={formData.headquarter}
+//             onChange={handleInputChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//             required
+//           />
+//         </div>
+
+
+//         {/* Contact Link */}
+//         <div>
+//           <label className="block text-sm font-medium">Contact Link</label>
+//           <input
+//             type="url"
+//             name="contactLink"
+//             value={formData.contactLink}
+//             onChange={handleInputChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//             required
+//           />
+//         </div>
+
+
+//         {/* Description */}
+//         <div>
+//           <label className="block text-sm font-medium">Description</label>
+//           <textarea
+//             name="description"
+//             value={formData.description}
+//             onChange={handleInputChange}
+//             className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//             required
+//           />
+//         </div>
+
+
+//         {/* Portfolio Companies */}
+//         <div>
+//           <h2 className="text-lg font-semibold">Portfolio Companies</h2>
+//           {formData.portfolioCompanies.map((company, index) => (
+//             <div key={index} className="space-y-4 mt-4">
+//               <div>
+//                 <label className="block text-sm font-medium">Company Name</label>
+//                 <input
+//                   type="text"
+//                   name="name"
+//                   value={company.name}
+//                   onChange={(e) => handlePortfolioChange(index, e)}
+//                   className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//                   required
+//                 />
+//               </div>
+
+//               {/* Company Logo Source */}
+//               <div>
+//                 <label className="block text-sm font-medium">Logo Source</label>
+//                 <select
+//                   name="logoSource"
+//                   value={company.logoSource}
+//                   onChange={(e) => handlePortfolioLogoSourceChange(index, e)}
+//                   className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//                 >
+//                   <option value="url">URL</option>
+//                   <option value="upload">Upload</option>
+//                 </select>
+//                 {company.logoSource === "url" ? (
+//                   <div>
+//                     <label className="block text-sm font-medium">Logo URL</label>
+//                     <input
+//                       type="url"
+//                       name="logo"
+//                       value={company.logo}
+//                       onChange={(e) => handlePortfolioChange(index, e)}
+//                       className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//                     />
+//                   </div>
+//                 ) : (
+//                   <div>
+//                     <label className="block text-sm font-medium">Upload Logo</label>
+//                     <input
+//                       type="file"
+//                       onChange={(e) => handleImageUpload(e, "portfolioLogo", index)}
+//                       className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//                     />
+//                   </div>
+//                 )}
+//               </div>
+
+//               <div>
+//                 <label className="block text-sm font-medium">Company Link</label>
+//                 <input
+//                   type="url"
+//                   name="link"
+//                   value={company.link}
+//                   onChange={(e) => handlePortfolioChange(index, e)}
+//                   className="w-full p-3 border border-gray-600 rounded bg-gray-800 text-white"
+//                   required
+//                 />
+//               </div>
+
+//               <button
+//                 type="button"
+//                 onClick={() => removeCompany(index)}
+//                 className="bg-red-600 text-white px-4 py-2 rounded mt-2"
+//               >
+//                 Remove Company
+//               </button>
+//             </div>
+//           ))}
+//           <button
+//             type="button"
+//             onClick={addPortfolioCompany}
+//             className="bg-green-600 text-white px-4 py-2 rounded mt-4"
+//           >
+//             Add Another Company
+//           </button>
+//         </div>
+
+
+//         {/* Submit */}
+//         <button
+//           type="submit"
+//           className="w-full p-3 bg-blue-600 text-white rounded"
+//           disabled={loading}
+//         >
+//           {loading ? "Submitting..." : "Submit"}
+//         </button>
+//       </form>
+//     </div>
+//   );
+// };
+
+// export default InvestorForm;
 
 // import { useState } from "react";
 // import axios from "axios";
