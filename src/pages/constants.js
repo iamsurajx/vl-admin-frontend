@@ -25,7 +25,7 @@ export const businessModels = [
   export const sectors = [
     "Technology", "Healthcare", "Finance",
     "Education", "Retail", "Energy",
-    "Agriculture", "Transportation", "Entertainment"
+    "Agriculture", "Transportation", "Entertainment", "Sector Agnoistic"
   ];
   
   export const investorTypes = [
